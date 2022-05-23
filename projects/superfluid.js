@@ -1,6 +1,7 @@
 const sdk = require("@defillama/sdk");
 const { default: BigNumber } = require("bignumber.js");
 const { request, gql } = require("graphql-request"); // GraphQLClient
+const { getBlock } = require('./helper/getBlock');
 // const abi = require('./erc20-abi.json')
 
 // Superfluid Supertokens can be retrieved using GraphQl API - cannot use block number to retrieve historical data at the moment though
@@ -9,6 +10,9 @@ const { request, gql } = require("graphql-request"); // GraphQLClient
 // const xdaiGraphUrl = 'https://api.thegraph.com/subgraphs/name/superfluid-finance/superfluid-xdai'
 const polygonGraphUrl = 'https://api.thegraph.com/subgraphs/name/superfluid-finance/protocol-v1-matic'
 const xdaiGraphUrl = 'https://api.thegraph.com/subgraphs/name/superfluid-finance/protocol-v1-xdai'
+const optimismGraphUrl = 'https://api.thegraph.com/subgraphs/name/superfluid-finance/protocol-v1-optimism-mainnet'
+const arbitrumGraphUrl = 'https://api.thegraph.com/subgraphs/name/superfluid-finance/protocol-v1-arbitrum-one'
+const avalancheGraphUrl = 'https://api.thegraph.com/subgraphs/name/superfluid-finance/protocol-v1-avalanche-c'
 
 const supertokensQuery = gql`
 query get_supertokens($block: Int) {
@@ -100,6 +104,18 @@ async function retrieveSupertokensBalances(chain, timestamp, ethBlock, chainBloc
     graphUrl = xdaiGraphUrl
     block = chainBlocks.xdai
   }
+  else if (chain === 'arbitrum') {
+    graphUrl = arbitrumGraphUrl
+    block = chainBlocks.arbitrum
+  }
+  else if (chain === 'optimism') {
+    graphUrl = optimismGraphUrl
+    block = chainBlocks.optimism
+  }
+  else if (chain === 'avalanche') {
+    graphUrl = avalancheGraphUrl
+    block = chainBlocks.avalanche
+  }
 
   const { tokens } = await request(
     graphUrl, 
@@ -119,13 +135,35 @@ async function xdai(timestamp, block, chainBlocks) {
   return retrieveSupertokensBalances('xdai', timestamp, block, chainBlocks)
 }
 
+async function arbitrum(timestamp, block, chainBlocks) {
+  return retrieveSupertokensBalances('arbitrum', timestamp, block, chainBlocks)
+}
+
+async function optimism(timestamp, block, chainBlocks) {
+  return retrieveSupertokensBalances('optimism', timestamp, block, chainBlocks)
+}
+
+async function avalanche(timestamp, block, chainBlocks) {
+  let improvBlock = await getBlock(timestamp, "avax", chainBlocks);
+  console.log(improvBlock);
+  return retrieveSupertokensBalances('avalanche', timestamp, improvBlock, chainBlocks)
+}
 
 module.exports = {
-  polygon: {
-    tvl: polygon
-  }, 
-  xdai: {
-    tvl: xdai
+  // polygon: {
+  //   tvl: polygon
+  // }, 
+  // xdai: {
+  //   tvl: xdai
+  // },
+  // arbitrum: {
+  //   tvl: arbitrum
+  // },
+  // optimism: { // This throws a block argument error
+  //   tvl: optimism
+  // },
+  avalanche: {
+    tvl: avalanche
   },
   methodology: `TVL is the total quantity of tokens locked in Super Tokens from Superfluid, on Polygon and xDai (most important being weth, dai, usdc and wbtc, as well as QiDAO and MOCA)`
 }
